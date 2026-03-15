@@ -1,0 +1,101 @@
+classify_role_task:
+  description: >
+    Determine which GitHub team the new employee should be added to.
+
+    Employee details:
+      - Name: {employee_name}
+      - Job Role: {employee_role}
+      - Department: {department}
+
+    Use the "Onboarding Policy Search" tool to search for the team assignment policy
+    for this role. Based on the policy, output ONLY the team slug: either
+    'developer' or 'readonly' (lowercase, no quotes in output).
+  expected_output: >
+    A single word: either 'developer' or 'readonly' — the GitHub team slug
+    the employee should be assigned to.
+  agent: role_classifier
+
+github_onboard_task:
+  description: >
+    Add the new employee to the GitHub team determined by the role classification step.
+
+    Employee details:
+      - GitHub username: {github_username}
+      - The assigned team slug is provided in the context from the previous task.
+
+    Use the "GitHub Team Manager" tool with:
+      - action: 'add'
+      - github_username: {github_username}
+      - team_slug: (the value from the classify_role_task output, either 'developer' or 'readonly')
+
+    Confirm the action was successful.
+  expected_output: >
+    A confirmation message showing the GitHub username, team added to, and success status.
+  agent: github_manager
+  context:
+    - classify_role_task
+
+onboarding_report_task:
+  description: >
+    Generate a professional onboarding completion report.
+
+    Employee details:
+      - Name: {employee_name}
+      - Role: {employee_role}
+      - Department: {department}
+      - GitHub username: {github_username}
+
+    Use the context from previous tasks to include:
+    1. Which GitHub team they were added to and why
+    2. What access they now have
+    3. Next steps for the employee (e.g., accept GitHub team invitation, review team repositories)
+  expected_output: >
+    A formatted markdown onboarding report with sections:
+    ## Onboarding Summary
+    ## GitHub Access
+    ## Next Steps
+  agent: onboarding_reporter
+  context:
+    - classify_role_task
+    - github_onboard_task
+
+github_offboard_task:
+  description: >
+    Remove the departing employee from all GitHub teams.
+
+    Employee details:
+      - Name: {employee_name}
+      - GitHub username: {github_username}
+
+    Use the "GitHub Team Manager" tool to remove them from BOTH teams:
+    1. Remove from 'developer' team (action: 'remove', team_slug: 'developer')
+    2. Remove from 'readonly' team (action: 'remove', team_slug: 'readonly')
+
+    Note: one removal may return an error if they were not a member of that team — this is expected.
+    Report the result of both attempts.
+  expected_output: >
+    A summary of the removal attempts for both the 'developer' and 'readonly' teams,
+    including success/failure status for each.
+  agent: github_manager
+
+offboarding_report_task:
+  description: >
+    Generate a professional offboarding completion report.
+
+    Employee details:
+      - Name: {employee_name}
+      - GitHub username: {github_username}
+      - Reason for offboarding: {reason}
+
+    Use the context from the previous task to include:
+    1. What GitHub access was removed
+    2. Offboarding completion status
+    3. Date of offboarding
+  expected_output: >
+    A formatted markdown offboarding report with sections:
+    ## Offboarding Summary
+    ## Access Revoked
+    ## Compliance Notes
+  agent: offboarding_reporter
+  context:
+    - github_offboard_task

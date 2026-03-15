@@ -1,0 +1,24 @@
+# Environment
+.env
+
+# ChromaDB persistent store
+.chromadb/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# uv
+.uv/
+
+# CrewAI generated reports (output files)
+*_report.md
+report.md
+
+# macOS
+.DS_Store
